@@ -19,8 +19,6 @@ type Proxy struct {
 	// wants.
 	Wrap func(upstream http.Handler) http.Handler
 
-	DialTLS func(network, addr string, c *tls.Config) (*tls.Conn, error)
-
 	CA *tls.Certificate
 
 	TLSServerConfig *tls.Config
