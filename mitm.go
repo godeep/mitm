@@ -25,11 +25,21 @@ type Proxy struct {
 
 	TLSClientConfig *tls.Config
 
+	// The transport used to perform proxy requests.
+	// If nil, http.DefaultTransport is used.
+	Transport http.RoundTripper
+
 	// FlushInterval specifies the flush interval
 	// to flush to the client while copying the
 	// response body.
 	// If zero, no periodic flushing is done.
 	FlushInterval time.Duration
+
+	// ErrorLog specifies an optional logger for errors
+	// that occur when attempting to proxy the request.
+	// If nil, logging goes to os.Stderr via the log package's
+	// standard logger.
+	ErrorLog *log.Logger
 }
 
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -40,7 +50,9 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	rp := &httputil.ReverseProxy{
 		Director:      httpDirector,
+		Transport:     p.Transport,
 		FlushInterval: p.FlushInterval,
+		ErrorLog:      p.ErrorLog,
 	}
 	p.Wrap(rp).ServeHTTP(w, r)
 }
