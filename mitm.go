@@ -115,10 +115,10 @@ func (p *Proxy) serveConnect(w http.ResponseWriter, r *http.Request) {
 		FlushInterval: p.FlushInterval,
 	}
 
-	ch := make(chan int)
-	wc := &onCloseConn{cconn, func() { ch <- 0 }}
+	closed := make(chan struct{})
+	wc := &onCloseConn{cconn, func() { closed <- struct{}{} }}
 	http.Serve(&oneShotListener{wc}, p.Wrap(rp))
-	<-ch
+	<-closed
 }
 
 func (p *Proxy) cert(names []string) (*tls.Certificate, error) {
