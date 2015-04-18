@@ -25,7 +25,7 @@ type Proxy struct {
 
 	TLSClientConfig *tls.Config
 
-	// The transport used to perform proxy requests.
+	// The transport used to perform non-SSL proxy requests.
 	// If nil, http.DefaultTransport is used.
 	Transport http.RoundTripper
 
