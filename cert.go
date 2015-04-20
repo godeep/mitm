@@ -25,6 +25,7 @@ const (
 	leafUsage = caUsage
 )
 
+// genCert generates a leaf cert signed by ca.
 func genCert(ca *tls.Certificate, names []string) (*tls.Certificate, error) {
 	now := time.Now().UTC()
 	if !ca.Leaf.IsCA {
