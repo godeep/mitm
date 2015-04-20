@@ -43,7 +43,6 @@ type Proxy struct {
 }
 
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Println("handle", r.URL)
 	if r.Method == "CONNECT" {
 		p.serveConnect(w, r)
 		return
@@ -57,6 +56,23 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	p.Wrap(rp).ServeHTTP(w, r)
 }
 
+// borrowed from net/http/httputil.ReverseProxy
+func (p *Proxy) logf(format string, args ...interface{}) {
+	if p.ErrorLog != nil {
+		p.ErrorLog.Printf(format, args...)
+	} else {
+		log.Printf(format, args...)
+	}
+}
+
+func (p *Proxy) log(v ...interface{}) {
+	if p.ErrorLog != nil {
+		p.ErrorLog.Println(v...)
+	} else {
+		log.Println(v...)
+	}
+}
+
 func (p *Proxy) serveConnect(w http.ResponseWriter, r *http.Request) {
 	var (
 		err   error
@@ -65,14 +81,14 @@ func (p *Proxy) serveConnect(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if len(a) == 0 {
-		log.Println("cannot determine cert name for " + r.Host)
+		p.log("cannot determine cert name for " + r.Host)
 		http.Error(w, "no upstream", 503)
 		return
 	}
 
 	provisionalCert, err := p.cert(a)
 	if err != nil {
-		log.Println("cert", err)
+		p.log("cert", err)
 		http.Error(w, "no upstream", 503)
 		return
 	}
@@ -90,7 +106,7 @@ func (p *Proxy) serveConnect(w http.ResponseWriter, r *http.Request) {
 		cConfig.ServerName = hello.ServerName
 		sconn, err = tls.Dial("tcp", r.Host, cConfig)
 		if err != nil {
-			log.Println("dial", r.Host, err)
+			p.log("dial", r.Host, err)
 			return nil, err
 		}
 		return p.cert([]string{hello.ServerName})
@@ -98,12 +114,12 @@ func (p *Proxy) serveConnect(w http.ResponseWriter, r *http.Request) {
 
 	cconn, err := handshake(w, sConfig)
 	if err != nil {
-		log.Println("handshake", r.Host, err)
+		p.log("handshake", r.Host, err)
 		return
 	}
 	defer cconn.Close()
 	if sconn == nil {
-		log.Println("could not determine cert name for " + r.Host)
+		p.log("could not determine cert name for " + r.Host)
 		return
 	}
 	defer sconn.Close()
